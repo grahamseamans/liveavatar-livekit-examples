@@ -159,6 +159,7 @@ async function main() {
       room: roomName,
       roomJoin: true,
       canPublish: true,
+      canPublishData: true, // Required for LiveAvatar to publish data messages
       canSubscribe: true,
     });
 
@@ -215,6 +216,10 @@ async function main() {
     if (startResponse.ok) {
       console.log('\n🎉 SUCCESS! The session started!');
       console.log('The avatar should be joining the room now.');
+      console.log('\n👀 Check the room to see the avatar!');
+      console.log(`Room: ${meetUrl}`);
+      console.log('\nPress Enter when you\'re done testing...');
+      await waitForEnter();
     } else {
       console.log('\n❌ FAILED: 500 ERROR');
       console.log('Even with a verified working LiveKit room, LiveAvatar returns 500.');

@@ -13,20 +13,9 @@ cp .env.example .env
 # Edit .env with your API keys
 ```
 
-## Examples & Bugs
+## Working Examples
 
-### 🔴 Bugs
-
-#### [500 Error: Custom Room Integration](./bugs/500-custom-room/)
-LiveAvatar returns 500 when using `livekit_config` in CUSTOM mode.
-
-```bash
-npm run bug:500
-```
-
-### ✅ Working Examples
-
-#### [Voice Agent](./working-examples/voice-agent/)
+### [Voice Agent](./working-examples/voice-agent/)
 A working LiveKit voice agent with STT, LLM, and TTS.
 
 ```bash
@@ -35,6 +24,21 @@ npm run worker
 
 # Terminal 2: Run demo
 npm run example:voice-agent
+```
+
+### [LiveAvatar Custom Room](./working-examples/liveavatar-custom-room/)
+Connect a LiveAvatar to a custom LiveKit room using CUSTOM mode. Demonstrates the critical `canPublishData` permission fix.
+
+```bash
+npm run example:liveavatar
+```
+
+### [Tool Calling Agent](./working-examples/tool-calling-test/)
+Voice agent with complex tool calling (flights, calendar, weather) demonstrating proper tool orchestration at the agent level.
+
+```bash
+npm run worker:toolcalling
+# Then connect via playground
 ```
 
 ## Environment Setup
@@ -60,28 +64,28 @@ ELEVEN_LABS_API_KEY=your-elevenlabs-key # Optional - can use inference gateway
 
 ```
 liveavatar-livekit-examples/
-├── bugs/                     # Bug reproductions
-│   └── 500-custom-room/      # LiveAvatar 500 error
-├── working-examples/         # Working code examples
-│   └── voice-agent/          # LiveKit voice agent
-├── package.json              # Dependencies and scripts
-├── .env.example              # Environment template
-└── README.md                 # This file
+├── working-examples/              # Working code examples
+│   ├── voice-agent/               # Basic LiveKit voice agent
+│   ├── liveavatar-custom-room/    # LiveAvatar CUSTOM mode integration
+│   └── tool-calling-test/         # Agent with complex tool calling
+├── package.json                   # Dependencies and scripts
+├── .env.example                   # Environment template
+└── README.md                      # This file
 ```
 
 ## Purpose
 
 This repository serves as:
-1. **Bug Reports** - Minimal reproductions for issues
-2. **Reference Code** - Working examples for integration
-3. **Testing Ground** - Verify fixes and test new features
+1. **Reference Code** - Working examples for LiveKit and LiveAvatar integration
+2. **Testing Ground** - Verify features and test configurations
+3. **Learning Resource** - Demonstrates best practices and common patterns
 
 ## Contributing
 
-Feel free to add more examples or bug reproductions following the existing structure:
-- Bugs go in `bugs/` with clear reproduction steps
-- Working examples go in `working-examples/` with usage instructions
-- Each should have its own README explaining the issue/feature
+Feel free to add more examples following the existing structure:
+- Working examples go in `working-examples/` with clear usage instructions
+- Each should have its own README explaining what it demonstrates
+- Include any critical fixes or learnings discovered
 
 ## Resources
 

@@ -4,9 +4,10 @@
   "description": "LiveAvatar and LiveKit integration examples, tests, and bug reproductions",
   "type": "module",
   "scripts": {
-    "bug:500": "tsx bugs/500-custom-room/demo.ts",
     "example:voice-agent": "tsx working-examples/voice-agent/demo.ts",
-    "worker": "tsx working-examples/voice-agent/agent.ts dev"
+    "example:liveavatar": "tsx working-examples/liveavatar-custom-room/demo.ts",
+    "worker": "tsx working-examples/voice-agent/agent.ts dev",
+    "worker:toolcalling": "tsx working-examples/tool-calling-test/agent.ts dev"
   },
   "keywords": ["liveavatar", "livekit", "examples", "integration"],
   "author": "",

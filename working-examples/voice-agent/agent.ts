@@ -93,10 +93,13 @@ export default defineAgent({
 });
 
 // Run the worker (this is the correct pattern per LiveKit docs)
+// Agent Dispatch Modes:
+// - NO agentName: AUTOMATIC dispatch - agent joins ALL new rooms automatically (best for local dev)
+// - WITH agentName: EXPLICIT dispatch - agent waits for manual dispatch command (use for prod/multi-agent setups)
 cli.runApp(
   new WorkerOptions({
     agent: fileURLToPath(import.meta.url),
-    agentName: 'simple-agent',
+    // agentName: 'simple-agent', // Commented out for auto-dispatch - agent will join all new rooms
     numIdleProcesses: 1, // Keep 1 agent process ready
     logLevel: 'info',
   })

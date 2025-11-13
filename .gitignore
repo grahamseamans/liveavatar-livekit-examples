@@ -17,3 +17,9 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Reference code (not part of this repo)
+heygen-plugin-reference/
+
+# Documentation cache
+*.llms.txt
