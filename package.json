@@ -6,10 +6,16 @@
   "scripts": {
     "example:voice-agent": "tsx working-examples/voice-agent/demo.ts",
     "example:liveavatar": "tsx working-examples/liveavatar-custom-room/demo.ts",
-    "worker": "tsx working-examples/voice-agent/agent.ts dev",
-    "worker:toolcalling": "tsx working-examples/tool-calling-test/agent.ts dev"
+    "worker:simplevoice": "tsx working-examples/voice-agent/agent.ts dev",
+    "worker:toolcalling": "tsx working-examples/tool-calling-test/agent.ts dev",
+    "worker:liveavatar": "tsx working-examples/liveavatar-voice-agent/agent.ts dev"
   },
-  "keywords": ["liveavatar", "livekit", "examples", "integration"],
+  "keywords": [
+    "liveavatar",
+    "livekit",
+    "examples",
+    "integration"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -18,10 +24,13 @@
     "@livekit/agents-plugin-elevenlabs": "^1.0.15",
     "@livekit/agents-plugin-openai": "^1.0.15",
     "@livekit/agents-plugin-silero": "^1.0.15",
+    "@livekit/rtc-node": "^0.13.12",
     "dotenv": "^17.2.3",
-    "livekit-server-sdk": "^2.14.0"
+    "livekit-server-sdk": "^2.14.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@types/ws": "^8.5.13",
     "tsx": "^4.19.2",
     "typescript": "^5.9.3"
   }

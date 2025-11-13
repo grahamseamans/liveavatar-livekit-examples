@@ -1,14 +1,11 @@
 /**
- * Minimal 500 Error Demo - WITH VERIFIED ROOM
- *
  * This script:
  * 1. Creates a REAL LiveKit room
  * 2. Lets you verify it works
  * 3. Passes verified credentials to LiveAvatar
- * 4. Shows if LiveAvatar can join or returns 500
+ * 4. Shows if LiveAvatar can join
  *
  * Usage:
- *   npx tsx minimal-500-error-demo-verified.ts
  */
 
 import 'dotenv/config';
@@ -64,7 +61,7 @@ function validateConfig() {
 // =============================================================================
 
 async function main() {
-  console.log('\n=== LiveAvatar 500 Error Demo - With Verified Room ===\n');
+  console.log('\n=== LiveAvatar Joins A Room ===\n');
 
   validateConfig();
 
