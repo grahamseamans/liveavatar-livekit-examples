@@ -257,7 +257,11 @@ export default defineAgent({
     agent.ws.on('message', (data) => {
       try {
         const message = JSON.parse(data.toString());
-        console.log('📨 LiveAvatar:', message.type || message);
+        // Only log important events, skip verbose audio buffer messages
+        const importantEvents = ['error', 'agent.speak_started', 'agent.speak_ended', 'agent.idle_started', 'agent.idle_ended'];
+        if (importantEvents.includes(message.type)) {
+          console.log('📨 LiveAvatar:', message.type);
+        }
       } catch (e) {
         // Handle non-JSON messages
       }

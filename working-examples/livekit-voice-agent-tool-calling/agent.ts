@@ -6,9 +6,11 @@ import {
     defineAgent,
     llm,
     voice,
-    inference,
 } from '@livekit/agents';
 import * as silero from '@livekit/agents-plugin-silero';
+import * as deepgram from '@livekit/agents-plugin-deepgram';
+import * as openai from '@livekit/agents-plugin-openai';
+import * as elevenlabs from '@livekit/agents-plugin-elevenlabs';
 import { fileURLToPath } from 'node:url';
 import { config } from 'dotenv';
 import { resolve } from 'node:path';
@@ -313,13 +315,14 @@ export default defineAgent({
             },
         });
 
-        // Create agent session with model configuration
+        // Create agent session with direct provider plugins (more reliable)
         const session = new voice.AgentSession({
-            // Use Inference Gateway with proper inference namespace
-            stt: inference.STT.fromModelString('assemblyai/universal-streaming:en'),
-            llm: inference.LLM.fromModelString('openai/gpt-4.1-mini'),
-            // Using Cartesia Sonic-2 TTS - more reliable with Inference Gateway
-            tts: inference.TTS.fromModelString('cartesia/sonic-2:9626c31c-bec5-4cca-baa8-f8ba9e84c8bc'),
+            stt: new deepgram.STT(),
+            llm: new openai.LLM({ model: 'gpt-4o-mini' }),
+            tts: new elevenlabs.TTS({
+                voiceId: '21m00Tcm4TlvDq8ikWAM',
+                model: 'eleven_turbo_v2'
+            }),
 
             // Use preloaded VAD
             vad: ctx.proc.userData.vad as silero.VAD,

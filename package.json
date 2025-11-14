@@ -4,11 +4,15 @@
   "description": "LiveAvatar and LiveKit integration examples, tests, and bug reproductions",
   "type": "module",
   "scripts": {
-    "example:voice-agent": "tsx working-examples/voice-agent/demo.ts",
     "example:liveavatar": "tsx working-examples/liveavatar-custom-room/demo.ts",
-    "worker:simplevoice": "tsx working-examples/voice-agent/agent.ts dev",
-    "worker:toolcalling": "tsx working-examples/tool-calling-test/agent.ts dev",
-    "worker:liveavatar": "tsx working-examples/liveavatar-voice-agent/agent.ts dev"
+    "example:create-room": "tsx working-examples/programatically-create-room/create-room-and-dispatch.ts",
+    "agent:voice-basic": "tsx working-examples/livekit-voice-agent-basic/agent.ts dev",
+    "agent:tool-calling": "tsx working-examples/livekit-voice-agent-tool-calling/agent.ts dev",
+    "debug:tts-interceptor": "tsx debug/tts-interceptor/agent.ts dev",
+    "debug:tts-server": "node debug/tts-interceptor/debug-server.js",
+    "wip:custom-agent": "tsx in-progress/custom-livekit-agent-speaking-through-liveavatar/complete-agent.ts dev",
+    "not-working:datastream": "tsx not-working/livekit-agent-datastream-to-liveavatar/agent.ts dev",
+    "not-working:bad-attempt": "tsx not-working/bad-liveavatar-attempt/agent.ts dev"
   },
   "keywords": [
     "liveavatar",
@@ -26,6 +30,7 @@
     "@livekit/agents-plugin-silero": "^1.0.15",
     "@livekit/rtc-node": "^0.13.12",
     "dotenv": "^17.2.3",
+    "express": "^5.1.0",
     "livekit-server-sdk": "^2.14.0",
     "ws": "^8.18.0"
   },

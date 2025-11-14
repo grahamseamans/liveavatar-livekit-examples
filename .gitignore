@@ -24,6 +24,8 @@ heygen-plugin-reference/
 # Documentation cache
 *.llms.txt
 
-livekit source code
+# Git submodules / external source code
 agents/
 agents-js/
+liveavatar-web-sdk/
+heygen-plugin-reference/

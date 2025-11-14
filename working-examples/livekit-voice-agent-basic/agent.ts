@@ -53,11 +53,14 @@ export default defineAgent({
       instructions: 'You are a helpful assistant in a LiveKit room. Keep your responses brief and friendly.',
     });
 
-    // Create session with STT/LLM/TTS pipeline using inference gateway
+    // Create session with direct provider plugins (more reliable than inference gateway)
     const session = new voice.AgentSession({
-      stt: 'deepgram/nova-2:en',
-      llm: 'openai/gpt-4o-mini',
-      tts: 'elevenlabs/eleven_turbo_v2:21m00Tcm4TlvDq8ikWAM',
+      stt: new deepgram.STT(),
+      llm: new openai.LLM({ model: 'gpt-4o-mini' }),
+      tts: new elevenlabs.TTS({
+        voiceId: '21m00Tcm4TlvDq8ikWAM',
+        model: 'eleven_turbo_v2'
+      }),
       vad: ctx.proc.userData.vad as silero.VAD,
     });
 

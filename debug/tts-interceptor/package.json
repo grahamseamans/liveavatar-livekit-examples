@@ -1,12 +1,11 @@
 {
-  "name": "liveavatar-complete",
+  "name": "liveavatar-pipeline",
   "version": "1.0.0",
-  "description": "Complete LiveAvatar agent with pipeline interception",
+  "description": "Simple LiveKit agent that intercepts TTS audio",
   "type": "module",
   "scripts": {
     "debug-server": "node debug-server.js",
-    "agent": "tsx simple-pipeline.ts dev",
-    "complete": "tsx complete-agent.ts dev"
+    "agent": "tsx simple-pipeline.ts dev"
   },
   "dependencies": {
     "@livekit/agents": "^1.0.18",
@@ -17,7 +16,6 @@
     "@livekit/rtc-node": "^0.13.21",
     "dotenv": "^17.2.3",
     "express": "^4.18.2",
-    "livekit-server-sdk": "^2.14.1",
     "ws": "^8.16.0"
   },
   "devDependencies": {

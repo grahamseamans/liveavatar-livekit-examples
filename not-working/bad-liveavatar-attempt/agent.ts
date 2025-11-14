@@ -32,12 +32,12 @@ import * as deepgram from '@livekit/agents-plugin-deepgram';
 import * as elevenlabs from '@livekit/agents-plugin-elevenlabs';
 import * as silero from '@livekit/agents-plugin-silero';
 import { fileURLToPath } from 'url';
-import { LiveAvatarAudioOutput, type LiveAvatarConfig } from './liveavatar-audio-output.js';
+import { LiveAvatarForwarder, type LiveAvatarConfig } from './liveavatar-forwarder.js';
 
 // Initialize logger
 initializeLogger({ pretty: true, level: 'info' });
 
-console.log('🚀 Starting LiveAvatar voice agent');
+console.log('🚀 Starting LiveAvatar voice agent (track capture method)');
 
 export default defineAgent({
   prewarm: async (proc: JobProcess) => {
@@ -61,17 +61,12 @@ export default defineAgent({
       livekitApiSecret: process.env.LIVEKIT_API_SECRET!,
     };
 
-    // Create LiveAvatar audio output
-    const liveAvatarOutput = new LiveAvatarAudioOutput(
+    // Create LiveAvatar forwarder
+    const liveAvatarForwarder = new LiveAvatarForwarder(
       liveAvatarConfig,
       ctx.room.name!,
       'liveavatar-bot'
     );
-
-    // Start LiveAvatar session (creates session, gets WebSocket URL, connects)
-    console.log('🎭 Starting LiveAvatar session...');
-    await liveAvatarOutput.start(ctx.room);
-    console.log('✅ LiveAvatar connected and ready');
 
     // Create agent with instructions
     const assistant = new voice.Agent({
@@ -80,7 +75,7 @@ export default defineAgent({
       You can see that users are interacting with your avatar representation.`,
     });
 
-    // Create agent session with custom audio output
+    // Create agent session - let it publish audio normally
     const session = new voice.AgentSession({
       stt: 'deepgram/nova-2:en',
       llm: 'openai/gpt-4o-mini',
@@ -88,8 +83,7 @@ export default defineAgent({
       vad: ctx.proc.userData.vad as silero.VAD,
     });
 
-    // Set our custom LiveAvatar audio output
-    session.output.audio = liveAvatarOutput;
+    // DO NOT set custom audio output - let agent publish normally
 
     // Handle agent state changes and forward to LiveAvatar
     session.on('agent_state_changed', (event: any) => {
@@ -97,7 +91,7 @@ export default defineAgent({
 
       if (event.old_state === 'speaking' && event.new_state === 'listening') {
         // Agent finished speaking
-        liveAvatarOutput.flush();
+        liveAvatarForwarder.onSpeechEnd();
       }
     });
 
@@ -105,7 +99,7 @@ export default defineAgent({
     session.on('conversation_item_added', (event: any) => {
       if (session.currentSpeech && session.currentSpeech.interrupted) {
         console.log('🛑 User interrupted agent');
-        liveAvatarOutput.clearBuffer();
+        liveAvatarForwarder.onInterrupt();
       }
     });
 
@@ -129,21 +123,28 @@ export default defineAgent({
       agent: assistant,
       room: ctx.room,
       outputOptions: {
-        audioEnabled: true, // This enables TTS processing
+        audioEnabled: true, // This enables TTS processing and publishing
       },
     });
 
-    console.log('✅ Agent session started with LiveAvatar');
+    console.log('✅ Agent session started');
 
-    // Say hello
-    setTimeout(() => {
-      session.say('Hello! I am your avatar assistant. How can I help you today?');
-    }, 2000);
+    // Say hello immediately to force audio track publication
+    session.say('Hello! I am your avatar assistant. How can I help you today?');
+    console.log('💬 Triggered initial speech to publish audio track');
+
+    // Wait a moment for the track to be published
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Start LiveAvatar forwarder after track is published
+    // We pass the agent participant which is publishing audio
+    await liveAvatarForwarder.start(ctx.room, ctx.room.localParticipant!);
+    console.log('✅ LiveAvatar forwarder started');
 
     // Handle cleanup on disconnect
     ctx.room.on('disconnected', async () => {
       console.log('🔌 Room disconnected, stopping LiveAvatar session');
-      await liveAvatarOutput.stop();
+      await liveAvatarForwarder.stop();
     });
   },
 });
