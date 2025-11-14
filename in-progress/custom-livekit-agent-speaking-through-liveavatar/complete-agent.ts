@@ -13,6 +13,7 @@ import {
   WorkerOptions,
   cli,
   defineAgent,
+  llm,
   voice,
   initializeLogger,
 } from '@livekit/agents';
@@ -25,6 +26,7 @@ import { AccessToken } from 'livekit-server-sdk';
 import { fileURLToPath } from 'url';
 import WebSocket from 'ws';
 import crypto from 'crypto';
+import { z } from 'zod';
 
 // Initialize logger
 initializeLogger({ pretty: true, level: 'info' });
@@ -33,6 +35,133 @@ console.log('🚀 Starting Complete LiveAvatar Agent');
 
 const AVATAR_IDENTITY = 'liveavatar-bot';
 const AVATAR_NAME = 'LiveAvatar';
+
+// ============================================================================
+// MOCK TOOL IMPLEMENTATIONS
+// ============================================================================
+
+// Utility to simulate network latency
+async function simulateLatency(minMs: number = 300, maxMs: number = 1500): Promise<void> {
+  const delay = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+  console.log(`  ⏱️  Simulating latency: ${delay}ms`);
+  await new Promise(resolve => setTimeout(resolve, delay));
+}
+
+// Utility to simulate random failures
+function shouldFail(failureRate: number = 0.2): boolean {
+  return Math.random() < failureRate;
+}
+
+// Mock flight data
+const MOCK_FLIGHTS = [
+  { id: 'UA123', airline: 'United Airlines', departure: '6:00 AM', arrival: '9:15 AM', price: 450, stops: 1, duration: '5h 15m' },
+  { id: 'AA456', airline: 'American Airlines', departure: '7:30 AM', arrival: '10:45 AM', price: 380, stops: 1, duration: '5h 15m' },
+  { id: 'DL789', airline: 'Delta', departure: '5:45 AM', arrival: '11:30 AM', price: 520, stops: 2, duration: '7h 45m' },
+];
+
+// Tool 1: Search for flights
+const searchFlights = llm.tool({
+  description: 'Search for available flights to a destination with optional filters for arrival time and price',
+  parameters: z.object({
+    destination: z.string().describe('Destination city (e.g., "San Francisco", "SF")'),
+    arrivalBefore: z.string().nullable().optional().describe('Latest acceptable arrival time (e.g., "10:00 AM")'),
+    maxPrice: z.number().nullable().optional().describe('Maximum price in USD'),
+  }),
+  execute: async ({ destination, arrivalBefore, maxPrice }) => {
+    console.log('\n🔍 TOOL CALL: searchFlights');
+    console.log(`  📍 Destination: ${destination}`);
+    await simulateLatency(400, 1200);
+    if (shouldFail(0.15)) throw new Error('Flight search service temporarily unavailable. Please try again.');
+
+    let flights = [...MOCK_FLIGHTS];
+    if (arrivalBefore) {
+      const targetTime = arrivalBefore.toLowerCase().includes('am') ? parseInt(arrivalBefore) : parseInt(arrivalBefore) + 12;
+      flights = flights.filter(f => {
+        const arrTime = f.arrival.toLowerCase().includes('am') ? parseInt(f.arrival) : parseInt(f.arrival) + 12;
+        return arrTime <= targetTime;
+      });
+    }
+    if (maxPrice) flights = flights.filter(f => f.price <= maxPrice);
+    flights.sort((a, b) => a.price - b.price);
+    console.log(`  ✅ Found ${flights.length} flights`);
+    return { success: true, flights, message: flights.length === 0 ? 'No flights found matching your criteria' : `Found ${flights.length} flight(s) to ${destination}` };
+  },
+});
+
+// Tool 2: Check calendar availability
+const checkCalendar = llm.tool({
+  description: 'Check the user\'s calendar for availability at a specific time',
+  parameters: z.object({
+    date: z.string().describe('Date to check (e.g., "tomorrow", "2024-01-15")'),
+    timeRange: z.string().describe('Time range to check (e.g., "morning", "9:00 AM - 12:00 PM")'),
+  }),
+  execute: async ({ date, timeRange }) => {
+    console.log('\n📅 TOOL CALL: checkCalendar');
+    await simulateLatency(300, 1000);
+    if (shouldFail(0.25)) throw new Error('Calendar service rate limit exceeded. Retrying...');
+    const isMorning = timeRange.toLowerCase().includes('morning') || timeRange.toLowerCase().includes('am');
+    const isAvailable = isMorning ? Math.random() > 0.2 : Math.random() > 0.5;
+    console.log(`  ✅ Calendar: ${isAvailable ? 'Available' : 'Busy'}`);
+    return { success: true, available: isAvailable, conflicts: isAvailable ? [] : ['Team meeting at 9:30 AM'], message: isAvailable ? `You're available during ${timeRange} on ${date}` : `You have conflicts during ${timeRange} on ${date}` };
+  },
+});
+
+// Tool 3: Get weather forecast
+const getWeather = llm.tool({
+  description: 'Get weather forecast for a location to check for potential flight delays',
+  parameters: z.object({
+    location: z.string().describe('City or airport code'),
+    date: z.string().describe('Date for forecast (e.g., "tomorrow", "2024-01-15")'),
+  }),
+  execute: async ({ location, date }) => {
+    console.log('\n🌤️  TOOL CALL: getWeather');
+    await simulateLatency(200, 800);
+    if (shouldFail(0.1)) throw new Error('Weather service connection timeout. Retrying...');
+    const conditions = ['Clear', 'Partly Cloudy', 'Foggy', 'Light Rain'];
+    const condition = conditions[Math.floor(Math.random() * conditions.length)];
+    const hasFog = condition === 'Foggy';
+    const temp = Math.floor(Math.random() * 20) + 50;
+    console.log(`  ✅ Weather: ${condition}, ${temp}°F`);
+    return { success: true, condition, temperature: temp, delayRisk: hasFog ? 'high' : 'low', message: hasFog ? `Foggy conditions expected in ${location} - potential delays` : `${condition} weather expected in ${location} - low delay risk` };
+  },
+});
+
+// Tool 4: Book a flight
+const bookFlight = llm.tool({
+  description: 'Book a specific flight by flight ID',
+  parameters: z.object({
+    flightId: z.string().describe('Flight ID to book (e.g., "UA123")'),
+    passengerName: z.string().describe('Passenger name'),
+  }),
+  execute: async ({ flightId, passengerName }) => {
+    console.log('\n✈️  TOOL CALL: bookFlight');
+    await simulateLatency(800, 1800);
+    if (shouldFail(0.2)) throw new Error('Payment processing failed. Please try again.');
+    const flight = MOCK_FLIGHTS.find(f => f.id === flightId);
+    if (!flight) return { success: false, message: `Flight ${flightId} not found` };
+    const confirmationNumber = `${flightId}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    console.log(`  ✅ Booking confirmed: ${confirmationNumber}`);
+    return { success: true, confirmationNumber, flight, message: `Successfully booked ${flight.airline} flight ${flightId} for ${passengerName}. Confirmation: ${confirmationNumber}` };
+  },
+});
+
+// Tool 5: Send confirmation email
+const sendEmail = llm.tool({
+  description: 'Send flight confirmation email with itinerary details',
+  parameters: z.object({
+    recipient: z.string().describe('Email recipient'),
+    subject: z.string().describe('Email subject'),
+    confirmationNumber: z.string().describe('Booking confirmation number'),
+    flightDetails: z.string().describe('Flight details to include in email'),
+  }),
+  execute: async ({ recipient, subject, confirmationNumber, flightDetails }) => {
+    console.log('\n📧 TOOL CALL: sendEmail');
+    await simulateLatency(400, 1200);
+    if (shouldFail(0.15)) throw new Error('Email service temporarily unavailable. Retrying...');
+    console.log('  ✅ Email sent successfully');
+    return { success: true, messageId: `msg-${Math.random().toString(36).substring(2, 10)}`, message: `Confirmation email sent to ${recipient}` };
+  },
+});
 
 // Custom Agent that intercepts TTS and sends to LiveAvatar WebSocket
 class LiveAvatarPipelineAgent extends voice.Agent {
@@ -235,9 +364,31 @@ export default defineAgent({
     // Start LiveAvatar session
     const { sessionId, wsUrl } = await startLiveAvatarSession(ctx.room, localIdentity);
 
-    // Create custom agent
+    // Create custom agent with flight booking capabilities
     const agent = new LiveAvatarPipelineAgent({
-      instructions: 'You are a helpful assistant with a visual avatar. Keep responses brief.',
+      instructions:
+        'You are a proactive flight booking assistant with a visual avatar. Be direct and action-oriented.\n\n' +
+        'IMPORTANT BEHAVIOR:\n' +
+        '- Make reasonable assumptions from context (e.g., "morning" = 9-11 AM)\n' +
+        '- ALWAYS announce when you\'re about to use a tool: "Let me search for flights..."\n' +
+        '- ALWAYS confirm tool results: "Found 3 flights" or "Checked your calendar - you\'re free"\n' +
+        '- Only ask questions when absolutely necessary (missing destination, passenger name, email)\n' +
+        '- Be concise - avoid long explanations\n\n' +
+        'WORKFLOW:\n' +
+        '1. Announce: "Let me search for flights..."\n' +
+        '2. Use searchFlights, checkCalendar, getWeather in parallel\n' +
+        '3. Summarize results briefly: "Found 3 options, you\'re available, weather looks good"\n' +
+        '4. Present best option and ask for confirmation\n' +
+        '5. Book immediately when confirmed\n' +
+        '6. Send email confirmation\n\n' +
+        'Handle failures gracefully but briefly: "Search failed, retrying..."',
+      tools: {
+        searchFlights,
+        checkCalendar,
+        getWeather,
+        bookFlight,
+        sendEmail,
+      },
     });
 
     // Store WebSocket URL
