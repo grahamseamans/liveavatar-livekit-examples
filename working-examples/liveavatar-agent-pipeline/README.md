@@ -1,13 +1,19 @@
-# LiveAvatar TTS Pipeline Interceptor
+# LiveKit TTS Pipeline Interceptor (Audio Extraction Shim)
 
-Simple LiveKit agent that intercepts TTS audio using pipeline nodes and sends it to a WebSocket endpoint.
+**This is NOT a LiveAvatar agent** - it's a LiveKit agent that extracts TTS audio to a WebSocket.
+
+## What This Does
+
+This agent demonstrates how to intercept TTS audio from a LiveKit voice pipeline and send it elsewhere (WebSocket) instead of/in addition to the LiveKit room. This is useful as a building block for integrating with systems like LiveAvatar that need the raw audio stream.
 
 ## How It Works
 
-The agent extends `voice.Agent` and overrides the `ttsNode` method to:
-1. Get audio from the normal TTS pipeline
-2. Send it to a WebSocket endpoint (debug server or LiveAvatar)
-3. Optionally pass it through to LiveKit
+1. Extends the `voice.Agent` class to override `ttsNode()`
+2. Intercepts all TTS audio frames before they reach LiveKit
+3. Sends audio chunks to a WebSocket (debug server or LiveAvatar)
+4. Can optionally suppress audio from LiveKit room (currently suppressed)
+
+This is essentially an "audio shim" - extracting audio out of the LiveKit pipeline to send it somewhere else.
 
 ## Setup
 
@@ -30,9 +36,9 @@ npm run agent
 
 The agent will:
 - Connect to the debug server WebSocket
-- Intercept all TTS audio
+- Intercept all TTS audio from the voice pipeline
 - Send audio chunks as base64-encoded PCM to the WebSocket
-- Still output audio to LiveKit (so you can hear it)
+- **NOT output audio to LiveKit** (audio only goes to WebSocket)
 
 ## What You'll See
 
@@ -43,12 +49,35 @@ The debug server shows:
 
 Play saved audio with:
 ```bash
-ffplay -f s16le -ar 24000 -ac 1 debug-output/audio_*.pcm
+ffplay -f s16le -ar 24000 -channels 1 debug-output/audio_*.pcm
+# Or if channels flag doesn't work:
+ffplay -f s16le -ar 24000 debug-output/audio_*.pcm
 ```
+
+## Architecture
+
+```
+User speaks → STT → LLM → TTS
+                           ↓
+                    ttsNode() intercepts
+                           ↓
+                    Send to WebSocket
+                           ↓
+                    Debug server saves to file
+```
+
+## Use Cases
+
+This pipeline interceptor pattern is useful for:
+
+1. Integrating LiveKit agents with external avatar systems
+2. Recording or processing TTS audio separately
+3. Sending audio to multiple destinations
+4. Custom audio routing requirements
 
 ## Next Steps
 
-To use with LiveAvatar instead of debug server:
-1. Change the WebSocket URL in `simple-pipeline.ts` to LiveAvatar's endpoint
-2. Adjust the message format to match LiveAvatar's protocol
-3. Set `controller.enqueue(frame)` to conditionally output (or not) to LiveKit
+To use with actual LiveAvatar:
+1. See `liveavatar-agent-complete` for a full implementation
+2. Change the WebSocket URL to LiveAvatar's endpoint
+3. Implement LiveAvatar's message protocol for audio chunks
